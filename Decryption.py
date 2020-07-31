@@ -1,8 +1,10 @@
 # импортируем нужные библиотеки
+from time import time, sleep
 from tkinter import *
 from PIL import ImageTk, Image
-from time import time
+import difflib
 from math import ceil
+
 # отображаемое на экране изображение
 img = ''
 current_image = ''
@@ -44,7 +46,7 @@ def next_scene(event):
         # запоминаем время начала уровня
         start_time = ceil(time())
         # изменяем главное окно под картинку
-        root.geometry('491x680')
+        root.geometry('491x504')
         # изменяем отображаемую картинку в поле вывода
         img = Image.open('images/1.jpg')
         current_image = ImageTk.PhotoImage(img)
@@ -66,27 +68,16 @@ def next_scene(event):
             # запоминаем время конца
             end_time = ceil(time())
             # считаем время прохождения
-            total_time = str((end_time-start_time) // 60) + ' мин ' + str((end_time-start_time) % 60) + ' сек'
-            # считываем правильный текст
-            right_text = open('Decrypted_text.txt')
-            right_text = right_text.read()
-            # убираем пробелы и запятые
-            right_text = right_text.replace(',', '')
-            right_text = right_text.replace(' ', '')
-            # считываем введенный текст
-            text = input_text.get('1.0', END)
-            # убираем пробелы и запятые
-            text = text.replace(',', '')
-            text = text.replace(' ', '')
-            mistakes = 0
-            for i in range(len(right_text)):
-                try:
-                    if text[i] != right_text[i]:
-                        mistakes += 1
-                except:
-                    mistakes += 1
-            print(mistakes)
-            if mistakes == 0:
+            total_time = str((end_time - start_time) // 60) + ' мин ' + str((end_time - start_time) % 60) + ' сек'
+            # считываем правильный текст и убираем пробелы и запятые
+            right_text = open('Decrypted_text.txt').read().replace(',', '').lower().split()
+            # считываем введенный текст, убираем пробелы, запятые, заменяем ё на е
+            text = input_text.get('1.0', END).lower().replace(',', '').replace('ё', 'е').split()
+            # расчитываем рейтинг
+            s = difflib.SequenceMatcher(lambda x: x == " ", right_text, text)
+            rate = round(s.ratio(), 2)
+            print(rate)
+            if rate == 1.0:
                 input_window.destroy()
                 message.config(image='',
                                text='Поздравляем, вы расшифровали письмо абслоютно верно! Вы справились за ' + str(
@@ -94,16 +85,20 @@ def next_scene(event):
             else:
                 input_window.destroy()
                 message.config(image='',
-                               text='Поздравляем, вы справились за ' + str(
-                                   total_time) + ' количество ваших ошибок ' + str(
-                                   mistakes))
+                               text='Вы справились за ' + str(
+                                   total_time) + ' рейтинг схожести текста ' + str(int(
+                                   rate * 100)) + '/100')
 
         # кнопка для отправки текста на проверку правильности
         send_button = Button(input_window, text="Отправить", command=correctness_check)
         send_button.pack(side=BOTTOM)
+    elif scene_number == 2:
+        message.config(text='Конец игры')
+        message.pack()
+    elif scene_number == 3:
+        root.quit()
 
 
 root.bind('<Button-1>', next_scene)
 
 root.mainloop()
-
